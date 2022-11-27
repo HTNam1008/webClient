@@ -9,53 +9,60 @@ import java.nio.charset.StandardCharsets;
 
 
 public class webClient {
-    public static void main(String[] args)  {
+
+    public static void main(String[] args) {
         if (args.length < 1)
             return;
-        URL url;
-        try {
-            url = new URL(args[0]);
-        } catch (MalformedURLException e) {
-            System.out.println("Malformed URL Exception raised");
-            return;
-        }
+        for (String arg : args) {
 
-        String hostName = url.getHost();
-        String pathName = getPathName(url);
-        String fileName=getFileName(url);
-
-        try {
-            Socket socket = new Socket(hostName, 80);
-
-            InputStream is = socket.getInputStream();
-            OutputStream os = socket.getOutputStream();
-
-            PrintWriter pw = new PrintWriter(os);
-            BufferedInputStream bis= new BufferedInputStream(is);
-
-            pw.print("GET " + pathName + " HTTP/1.1\r\n");
-            pw.print("Host: " + hostName + "\r\n");
-            pw.print("Connection: Keep-alive\r\n");
-            //pw.print("Connection: Close\r\n");
-            pw.print("\r\n");
-            pw.flush();
-
-            File file = new File(hostName + "_" + fileName);
-            if (isFolder(fileName)) {
-                if (!file.mkdir()) {
-                    System.out.println("Create file failed !!!");
-                    System.exit(1);
-                } else {
-                    saveFolder(pw,bis,url,file);
+            Thread x = new Thread(() -> {
+                String hostName;
+                String pathName;
+                String fileName;
+                URL url;
+                try {
+                    url = new URL(arg);
+                    hostName = url.getHost();
+                    pathName = getPathName(url);
+                    fileName = getFileName(url);
+                } catch (MalformedURLException x1) {
+                    System.out.println("Malformed URL Exception raised");
+                    return;
                 }
-            } else {
-                FileOutputStream fOut = new FileOutputStream(file);
-                saveFile(bis,fOut);
-            }
-        }
-        catch (IOException e) {
-            System.err.println("Exception: " + e);
-            System.exit(1);
+
+                try {
+                    Socket socket = new Socket(hostName, 80);
+
+                    InputStream is = socket.getInputStream();
+                    OutputStream os = socket.getOutputStream();
+
+                    PrintWriter pw = new PrintWriter(os);
+                    BufferedInputStream bis = new BufferedInputStream(is);
+
+                    pw.print("GET " + pathName + " HTTP/1.1\r\n");
+                    pw.print("Host: " + hostName + "\r\n");
+                    pw.print("Connection: Keep-alive\r\n");
+                    pw.print("\r\n");
+                    pw.flush();
+
+                    File file = new File(hostName + "_" + fileName);
+                    if (isFolder(fileName)) {
+                        if (!file.mkdir()) {
+                            System.out.println("Create file failed !!!");
+                            System.exit(1);
+                        } else {
+                            saveFolder(pw, bis, url, file);
+                        }
+                    } else {
+                        FileOutputStream fOut = new FileOutputStream(file);
+                        saveFile(bis, fOut);
+                    }
+                } catch (IOException e) {
+                    System.err.println("Exception: " + e);
+                    System.exit(1);
+                }
+            });
+            x.start();
         }
     }
 
@@ -97,7 +104,6 @@ public class webClient {
     public static boolean checkSpace(String x) {
         return x.contains("\r\n");
     }
-
     public static int getSizeChunk(String x) {
         String[] data=x.split("\r\n");
         return Integer.parseInt(data[0],16);
@@ -176,7 +182,7 @@ public class webClient {
 
     public static void saveFileLength(BufferedInputStream bis, FileOutputStream fOut,int contentLength) {
         int sumLength = 0;
-        byte[] byte1 = new byte[32768];
+        byte[] byte1 = new byte[2048*2048];
         int size;
         String data = "";
         System.out.println("Downloading....");
