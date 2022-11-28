@@ -314,7 +314,7 @@ public class webClient {
             try {
                 if (w != null) {
                     sendRequest(pw, w, url);
-                    FileOutputStream out = new FileOutputStream(currentDirectory + "/" + file.toString() + "/" + file.toString() + "_" + w);
+                    FileOutputStream out = new FileOutputStream(currentDirectory  +"/"+ file.toString()+"/"+ w);
                     saveFile(bis, out);
                 }
             }
